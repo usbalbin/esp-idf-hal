@@ -22,7 +22,7 @@ pub enum ComparatorChannel {
 }
 
 pub struct Generator<'d, G> {
-    pub(crate) _handle: mcpwm_gen_handle_t,
+    pub(crate) handle: mcpwm_gen_handle_t,
     _p: PhantomData<&'d mut ()>,
     _group: PhantomData<G>,
 }
@@ -100,7 +100,7 @@ impl<'d> GeneratorConfig<'d> {
 
         //
         Ok(Generator {
-            _handle: gen,
+            handle: gen,
             _p: PhantomData,
             _group: PhantomData,
         })

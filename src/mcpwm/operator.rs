@@ -1,7 +1,7 @@
 use esp_idf_sys::{
     esp, mcpwm_comparator_set_compare_value, mcpwm_oper_handle_t, mcpwm_operator_config_t,
     mcpwm_operator_config_t__bindgen_ty_1, mcpwm_operator_connect_timer, mcpwm_timer_handle_t,
-    EspError,
+    EspError, ESP_ERR_INVALID_ARG,
 };
 
 use crate::mcpwm::Group;
@@ -56,16 +56,16 @@ pub struct Operator<'d, const N: u8, G: Group> {
     comparator_x: Comparator, // SOC_MCPWM_COMPARATORS_PER_OPERATOR is 2 for ESP32 and ESP32-S3
     comparator_y: Comparator,
 
-    _generator_a: Option<Generator<'d, G>>, // One generator per pin, with a maximum of two generators per Operator
-    _generator_b: Option<Generator<'d, G>>,
+    generator_a: Option<Generator<'d, G>>, // One generator per pin, with a maximum of two generators per Operator
+    generator_b: Option<Generator<'d, G>>,
     //deadtime: D
 }
 
 pub(crate) unsafe fn new<const N: u8, G>(
     instance: OPERATOR<N, G>,
     timer_handle: mcpwm_timer_handle_t,
-    cfg: OperatorConfig,
-) -> Result<Operator<N, G>, EspError>
+    cfg: OperatorConfig<'_>,
+) -> Result<Operator<'_, N, G>, EspError>
 where
     G: Group,
 {
@@ -115,8 +115,8 @@ where
         comparator_x,
         comparator_y,
 
-        _generator_a: generator_a,
-        _generator_b: generator_b,
+        generator_a,
+        generator_b,
     })
 }
 
@@ -160,12 +160,7 @@ where
             ))
         }
     }
-}
 
-impl<'d, const N: u8, G> Operator<'d, N, G>
-where
-    G: Group,
-{
     /// Get compare value, often times same as the duty for output B.
     ///
     /// See `Self::set_compare_value_x` for more info
@@ -191,6 +186,49 @@ where
                 value.into()
             ))
         }
+    }
+
+    /// Set force level for MCPWM generator.
+    pub fn set_force_level_a(&mut self, level: Option<crate::gpio::Level>) -> Result<(), EspError> {
+        let generator: &Generator<_> = self
+            .generator_a
+            .as_ref()
+            .ok_or(EspError::from(ESP_ERR_INVALID_ARG).unwrap())?;
+        let level = match level {
+            None => -1,
+            Some(crate::gpio::Level::High) => 1,
+            Some(crate::gpio::Level::Low) => 0,
+        };
+        unsafe {
+            esp!(esp_idf_sys::mcpwm_generator_set_force_level(
+                generator.handle,
+                level,
+                true // TODO: Do we want support for hold_on = false?
+            ))?;
+        }
+
+        Ok(())
+    }
+
+    pub fn set_force_level_b(&mut self, level: Option<crate::gpio::Level>) -> Result<(), EspError> {
+        let generator: &Generator<_> = self
+            .generator_b
+            .as_ref()
+            .ok_or(EspError::from(ESP_ERR_INVALID_ARG).unwrap())?;
+        let level = match level {
+            None => -1,
+            Some(crate::gpio::Level::High) => 1,
+            Some(crate::gpio::Level::Low) => 0,
+        };
+        unsafe {
+            esp!(esp_idf_sys::mcpwm_generator_set_force_level(
+                generator.handle,
+                level,
+                true // TODO: Do we want support for hold_on = false?
+            ))?;
+        }
+
+        Ok(())
     }
 }
 

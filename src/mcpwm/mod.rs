@@ -76,22 +76,24 @@
 //!
 //! See the `examples/` folder of this repository for more.
 
-mod comparator;
-mod generator;
-mod operator;
+pub mod comparator;
+pub mod generator;
+pub mod operator;
+pub mod timer;
+
 mod operator_config;
-mod timer;
 mod timer_connection;
 
 use core::ffi;
 
 pub use self::{
-    generator::{GeneratorAction, GeneratorConfig},
-    operator::{Operator, OPERATOR},
+    operator::Operator,
     operator_config::OperatorConfig,
-    timer::{TimerConfig, TimerDriver, TIMER},
+    timer::{TimerConfig, TimerDriver},
     timer_connection::TimerConnection,
 };
+
+use self::{operator::OPERATOR, timer::TIMER};
 
 /// The Motor Control Pulse Width Modulator peripheral
 pub struct MCPWM<G: Group> {

@@ -8,10 +8,11 @@ use super::{
     Operator, OperatorConfig,
 };
 
-// TODO: How do we want fault module to fit into this?
+// TODO: How do we want the fault module to fit into this?
 /// Created by `Timer::into_connection()`
-pub struct TimerConnection<const N: u8, G: Group, O0, O1, O2>
+pub struct TimerConnection<const N: u8, G, O0, O1, O2>
 where
+    G: Group,
     O0: OptionalOperator<0, G>,
     O1: OptionalOperator<1, G>,
     O2: OptionalOperator<2, G>,
@@ -20,6 +21,15 @@ where
     operator0: O0,
     operator1: O1,
     operator2: O2,
+}
+
+unsafe impl<const N: u8, G, O0, O1, O2> Send for TimerConnection<N, G, O0, O1, O2>
+where
+    G: Group,
+    O0: OptionalOperator<0, G>,
+    O1: OptionalOperator<1, G>,
+    O2: OptionalOperator<2, G>,
+{
 }
 
 impl<const N: u8, G: Group> TimerConnection<N, G, NoOperator, NoOperator, NoOperator> {
@@ -54,7 +64,36 @@ impl<
             &mut self.operator2,
         )
     }
+
+    pub fn timer(&mut self) -> &mut TimerDriver<N, G> {
+        &mut self.timer
+    }
 }
+
+impl<'d, const N: u8, G: Group, O1: OptionalOperator<1, G>, O2: OptionalOperator<2, G>>
+    TimerConnection<N, G, Operator<'d, 0, G>, O1, O2>
+{
+    pub fn operator0(&mut self) -> &mut Operator<'d, 0, G> {
+        &mut self.operator0
+    }
+}
+
+impl<'d, const N: u8, G: Group, O0: OptionalOperator<0, G>, O2: OptionalOperator<2, G>>
+    TimerConnection<N, G, O0, Operator<'d, 1, G>, O2>
+{
+    pub fn operator1(&mut self) -> &mut Operator<'d, 1, G> {
+        &mut self.operator1
+    }
+}
+
+impl<'d, const N: u8, G: Group, O0: OptionalOperator<0, G>, O1: OptionalOperator<1, G>>
+    TimerConnection<N, G, O0, O1, Operator<'d, 2, G>>
+{
+    pub fn operator2(&mut self) -> &mut Operator<'d, 2, G> {
+        &mut self.operator2
+    }
+}
+
 // TODO: Do something more builder-pattern like for making the operator?
 impl<const N: u8, G, O1, O2> TimerConnection<N, G, NoOperator, O1, O2>
 where
