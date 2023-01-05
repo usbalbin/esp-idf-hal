@@ -190,7 +190,7 @@ where
 
     /// Set force level for MCPWM generator.
     pub fn set_force_level_a(&mut self, level: Option<crate::gpio::Level>) -> Result<(), EspError> {
-        let generator: &Generator<_> = self
+        let generator = self
             .generator_a
             .as_ref()
             .ok_or(EspError::from(ESP_ERR_INVALID_ARG).unwrap())?;
@@ -211,7 +211,7 @@ where
     }
 
     pub fn set_force_level_b(&mut self, level: Option<crate::gpio::Level>) -> Result<(), EspError> {
-        let generator: &Generator<_> = self
+        let generator = self
             .generator_b
             .as_ref()
             .ok_or(EspError::from(ESP_ERR_INVALID_ARG).unwrap())?;
